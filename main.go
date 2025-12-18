@@ -1,31 +1,41 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"os"
 
 	"github.com/kenzierivan/gator/internal/config"
 )
+
+type state struct {
+	cfg *config.Config
+}
 
 func main() {
 	cfg, err := config.Read()
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
-	fmt.Printf("Read config: %+v\n", cfg)
 
-	err = cfg.SetUser("kenzie")
-	if err != nil {
-		log.Fatalf("couldn't set current user: %v", err)
+	programState := &state{cfg: &cfg}
+	cmds := commands{
+		commands: make(map[string]func(*state, command) error),
 	}
+	cmds.register("login", handlerLogin)
 
-	cfg, err = config.Read()
-	if err != nil {
-		log.Fatalf("error reading config: %v", err)
+	args := os.Args
+	if len(args) < 2 {
+		log.Fatalf("incorrect number of arguments")
 	}
-	fmt.Printf("Read config again: %+v\n", cfg)
-}
+	
+	cmdName := args[1]
+	cmdArgs := args[2:]
 
-type state struct {
-	cfg *config.Config
+	err = cmds.run(programState, command{
+		Name: cmdName,
+		Args: cmdArgs,
+	})
+	if err != nil {
+		log.Fatalf("error: %s", err)
+	}
 }
