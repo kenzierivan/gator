@@ -6,6 +6,9 @@ returning *;
 -- name: GetFeed :one
 select * from feeds where id = $1;
 
+-- name: GetFeedByURL :one
+select * from feeds where url = $1;
+
 -- name: GetFeeds :many
 select * from feeds;
 
