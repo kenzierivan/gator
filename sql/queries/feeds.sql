@@ -15,3 +15,13 @@ select * from feeds;
 -- name: DeleteFeeds :exec
 delete from feeds;
 
+-- name: MarkFeedFetched :exec
+update feeds
+set last_fetched_at = now(), updated_at = now()
+where id = $1;  
+
+-- name: GetNextFeedToFetch :one
+select * 
+from feeds
+order by last_fetched_at asc nulls first
+limit 1;
