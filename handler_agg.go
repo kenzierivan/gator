@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/kenzierivan/gator/internal/database"
+	"github.com/lib/pq"
 )
 func handlerAgg(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
@@ -36,8 +40,33 @@ func scrapeFeeds(s *state) error {
 		return err
 	}
 
-	for _, feed := range rssFeed.Channel.Item {
-		fmt.Printf("* %s\n", feed.Title)
+	for _, item := range rssFeed.Channel.Item {
+		publishedDate, err := time.Parse(
+			"Mon, 02 Jan 2006 15:04:05 -0700",
+    		item.PubDate,
+		)
+		if err != nil {
+			return fmt.Errorf("couldn't parse published date: %w", err)
+		}
+
+		err = s.db.CreatePost(context.Background(), database.CreatePostParams{
+			ID: uuid.New(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			Title: item.Title,
+			Url: item.Link,
+			Description: item.Description,
+			PublishedAt: publishedDate,
+			FeedID: nextFeed.ID,
+		})
+		if err != nil {
+			if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+				continue
+			}
+			return fmt.Errorf("couldn't create post: %w", err)
+		}
+		fmt.Printf("Found post: %s\n", item.Title)
 	}
+
 	return nil
 }
