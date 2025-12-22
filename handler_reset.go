@@ -20,11 +20,6 @@ func handlerReset(s *state, cmd command) error {
 	if err != nil {
 		return fmt.Errorf("couldn't delete feeds: %w", err)
 	}
-
-	err = s.db.DeleteFollowFeeds(context.Background())
-	if err != nil {
-		return fmt.Errorf("couldn't delete follow feeds: %w", err)
-	}
 	
 	fmt.Println("Database reset successfully!")
 	return nil
